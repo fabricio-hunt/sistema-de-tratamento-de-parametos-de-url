@@ -1,4 +1,3 @@
-# frontend.py
 import pandas as pd
 from tkinter import messagebox
 from tkinterdnd2 import DND_FILES, TkinterDnD
