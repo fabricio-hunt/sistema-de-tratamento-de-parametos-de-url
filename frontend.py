@@ -4,6 +4,7 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 from ttkbootstrap import Style
 from ttkbootstrap.widgets import Button, Label
 from backend import tratar_urls
+from tkinter import filedialog
 
 def processar_arquivo(path):
     try:
