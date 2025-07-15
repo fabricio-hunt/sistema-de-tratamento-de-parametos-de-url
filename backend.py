@@ -3,34 +3,25 @@ from urllib.parse import urlparse
 
 def tratar_urls(df):
     """
-    Função que trata as URLs conforme especificado:
     1. Detecta a coluna 'url' independentemente da capitalização.
-    2. Remove domínio e parâmetros, deixando apenas o caminho da URL.
-    3. Converte para letras minúsculas.
-    4. Remove URLs duplicadas.
+    2. Remove domínio e parâmetros, deixando apenas o caminho.
+    3. Converte para minúsculas.
+    4. Remove duplicatas e descarta linhas inválidas.
     """
-    urls_tratadas = []
-
-    # Detecta a coluna 'url' com qualquer capitalização
-    coluna_url = next((col for col in df.columns if col.lower() == "url"), None)
-
+    # Detecta coluna 'url'
+    coluna_url = next((c for c in df.columns if c.lower() == "url"), None)
     if not coluna_url:
         raise ValueError("Coluna 'url' não encontrada no DataFrame.")
 
-    for url in df[coluna_url]:
+    urls_tratadas = []
+    for u in df[coluna_url].fillna("").astype(str):
         try:
-            # Extrai o caminho da URL (remove domínio e parâmetros)
-            caminho = urlparse(url).path
-            # Converte para minúsculo
-            caminho = caminho.lower()
-            urls_tratadas.append(caminho)
+            caminho = urlparse(u).path.lower()
+            if caminho:
+                urls_tratadas.append(caminho)
         except Exception:
-            urls_tratadas.append("erro")
+            # opcional: registrar o erro
+            pass
 
-    # Cria DataFrame com a coluna tratada
     df_tratado = pd.DataFrame({"URL_TRATADA": urls_tratadas})
-
-    # Remove URLs duplicadas
-    df_tratado = df_tratado.drop_duplicates()
-
-    return df_tratado
+    return df_tratado.drop_duplicates().reset_index(drop=True)
