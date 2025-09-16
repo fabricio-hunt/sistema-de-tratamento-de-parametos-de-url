@@ -36,7 +36,7 @@ janela.title("Tratamento de URLs")
 janela.geometry("400x250")
 
 style = Style("flatly")
-label = Label(janela, text="Arraste seu arquivo .CSV ou .TXT aqui please", font=("Arial", 12))
+label = Label(janela, text="Arraste seu arquivo .CSV ou .TXT aqui!", font=("Arial", 12))
 label.pack(pady=20)
 
 drop_area = Label(janela, text="🗂️ Solte aqui ok", bootstyle="info", relief="ridge", padding=20)
