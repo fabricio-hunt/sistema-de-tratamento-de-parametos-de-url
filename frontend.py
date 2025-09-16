@@ -36,10 +36,10 @@ janela.title("Tratamento de URLs")
 janela.geometry("400x250")
 
 style = Style("flatly")
-label = Label(janela, text="Arraste seu arquivo .CSV ou .TXT aqui", font=("Arial", 12))
+label = Label(janela, text="Arraste seu arquivo .CSV ou .TXT aqui please", font=("Arial", 12))
 label.pack(pady=20)
 
-drop_area = Label(janela, text="🗂️ Solte aqui pfv", bootstyle="info", relief="ridge", padding=20)
+drop_area = Label(janela, text="🗂️ Solte aqui ok", bootstyle="info", relief="ridge", padding=20)
 drop_area.pack(padx=50, pady=10, fill="both")
 drop_area.drop_target_register(DND_FILES)
 drop_area.dnd_bind("<<Drop>>", lambda e: processar_arquivo(e.data))
