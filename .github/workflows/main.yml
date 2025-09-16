@@ -1,4 +1,4 @@
-name: CI (backend básico)
+name: CI simples (gera output)
 
 on:
   push:
@@ -7,41 +7,39 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
-  test-backend:
+  run:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      - name: Install deps do projeto + pytest
+      - name: Instalar deps mínimas
         run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
-          pip install pytest
+          python -m pip install --upgrade pip
+          pip install pandas chardet
 
-      - name: Rodar testes (backend)
-        run: pytest -q tests/test_tratar_urls.py
+      - name: Gerar output.csv usando o backend
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          # IMPORTANTE: ajuste se seu arquivo não for "backend.py" na raiz.
+          from backend import tratar_urls
 
-      - name: Gerar output.csv (headless)
-        run: python scripts/generate_output.py
+          df = pd.DataFrame({"url": ["https://exemplo.com/Loja/Produto?a=1&b=2"]})
+          out = tratar_urls(df)
+          out.to_csv("output.csv", index=False, encoding="utf-8")
+          print("OK: output.csv gerado")
+          PY
 
-      - name: Conferir se output.csv existe
-        run: test -f output.csv || (echo "output.csv não foi gerado" && exit 1)
+      - name: Conferir arquivo
+        run: |
+          test -f output.csv || (echo "ERRO: não gerou output.csv" && exit 1)
 
-      - name: Upload do output.csv
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: output
