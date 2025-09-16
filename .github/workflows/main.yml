@@ -1,25 +1,22 @@
-name: CI/CD
+name: Validate packages & output.txt
 
 on:
   push:
     branches: [ main, master ]
-    tags:
-      - 'v*.*.*'
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 permissions:
-  contents: write  # necessário para criar Release e enviar artefatos
+  contents: read
 
 jobs:
-  # ---------- Python CI ----------
-  python-ci:
-    if: >
-      hashFiles('requirements.txt') != '' ||
-      hashFiles('pyproject.toml') != '' ||
-      hashFiles('setup.cfg') != '' ||
-      hashFiles('setup.py') != ''
+  validate:
     runs-on: ubuntu-latest
+
+    env:
+      OUTPUT_FILE: output.txt   # ajuste se o caminho for diferente (ex.: dist/output.txt)
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,109 +27,52 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: Install deps (requirements.txt se existir)
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install & upgrade project deps
         run: |
           if [ -f requirements.txt ]; then
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
+            # instala e força atualização para as últimas versões compatíveis
+            pip install --upgrade -r requirements.txt
           elif [ -f pyproject.toml ]; then
-            python -m pip install --upgrade pip build
-            # instala dependências de desenvolvimento se definido (pep 621 + hatch/poetry/pdm podem variar)
-            # ajuste conforme seu gerenciador de pacotes
+            # ajuste aqui conforme seu gerenciador (poetry/pdm/hatch)
+            pip install build
           else
-            python -m pip install --upgrade pip
-            pip install pytest flake8
+            echo "Nenhum requirements.txt/pyproject.toml encontrado." && exit 1
           fi
 
-      - name: Lint (flake8, se disponível)
+      - name: Fail if any package is still outdated
         run: |
-          if python -c "import flake8" 2>/dev/null; then
-            flake8 .
-          else
-            echo "flake8 não encontrado; pulando lint."
+          # lista pacotes desatualizados; falha se tiver algum
+          COUNT=$(python -m pip list --outdated --format=freeze | wc -l)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::Ainda há pacotes desatualizados:"
+            python -m pip list --outdated
+            exit 1
           fi
+          echo "Todos os pacotes estão atualizados."
 
-      - name: Testes (pytest, se existir)
+      - name: Run your app to produce output.txt
         run: |
-          if ls -1 **/test_*.py tests/*_test.py 2>/dev/null | head -n 1; then
-            pytest -q
-          else
-            echo "Nenhum teste encontrado; pulando pytest."
-          fi
+          # 👇 SUBSTITUA o comando abaixo pelo comando real do seu projeto
+          # Exemplos:
+          #   python main.py
+          #   python -m backend.processar --saida "$OUTPUT_FILE"
+          #   python scripts/gerar_output.py -o "$OUTPUT_FILE"
+          python main.py
 
-      - name: Build artefato (wheel/sdist ou zip)
+      - name: Check output.txt exists
         run: |
-          set -e
-          if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f setup.cfg ]; then
-            python -m pip install build
-            python -m build
-            mkdir -p artifact && cp -r dist/* artifact/
-          else
-            mkdir -p artifact
-            zip -r artifact/project.zip . -x ".git/*" ".github/*"
+          if [ ! -f "$OUTPUT_FILE" ]; then
+            echo "::error::Arquivo $OUTPUT_FILE não foi gerado."
+            ls -la
+            exit 1
           fi
+          echo "Arquivo $OUTPUT_FILE gerado com sucesso."
 
-      - name: Upload artefato (Python)
+      - name: Upload output.txt as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-python
-          path: artifact/
-
-  # ---------- Node.js CI ----------
-  node-ci:
-    if: hashFiles('package.json') != ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install
-        run: npm ci || npm install
-
-      - name: Lint (se script existir)
-        run: npm run lint --if-present
-
-      - name: Testes (se script existir)
-        run: npm test --if-present
-
-      - name: Build (se script existir)
-        run: npm run build --if-present
-
-      - name: Preparar artefato
-        run: |
-          mkdir -p artifact
-          if [ -d dist ]; then
-            cp -r dist/* artifact/
-          else
-            zip -r artifact/project.zip . -x ".git/*" ".github/*" "node_modules/*"
-          fi
-
-      - name: Upload artefato (Node)
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-node
-          path: artifact/
-
-  # ---------- Release (CD simplificado) ----------
-  release:
-    needs: [python-ci, node-ci]
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Baixar artefatos dos jobs
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-      - name: Criar Release e anexar artefatos
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            artifacts/**/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: output
+          path: ${{ env.OUTPUT_FILE }}
