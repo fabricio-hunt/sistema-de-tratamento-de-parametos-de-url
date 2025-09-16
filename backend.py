@@ -11,7 +11,7 @@ def tratar_urls(df):
     # Detecta coluna 'url'
     coluna_url = next((c for c in df.columns if c.lower() == "url"), None)
     if not coluna_url:
-        raise ValueError("Coluna 'url' não encontrada no DataFrame agora.")
+        raise ValueError("Coluna 'url' não encontrada no DataFrame.")
 
     urls_tratadas = []
     for u in df[coluna_url].fillna("").astype(str):
