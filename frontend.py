@@ -26,7 +26,7 @@ def processar_arquivo(path):
             df = pd.read_csv(str(p))
         df_tratado = tratar_urls(df)
         df_tratado.to_csv("output.csv", index=False)
-        messagebox.showinfo("Concluído", "Tratamento finalizado! Arquivo salvo como output.csv")
+        messagebox.showinfo("Concluído", "Tratamento finalizado! Arquivo salvo como output.csv veja aqui!")
     except Exception as e:
         messagebox.showerror("Erro", f"Erro ao processar o arquivo:\n{e}")
 
