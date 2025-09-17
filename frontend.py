@@ -60,7 +60,8 @@ def process_file(path_str: str) -> None:
 
         # Output path
         out_path = p.with_name(p.stem + "_clean.csv")
-        df_processed.to_csv(out_path, index=False)
+        df_processed.to_csv(out_path, index=False, sep=";", encoding="utf-8")
+
 
         messagebox.showinfo("Done", f"Processing completed!\nSaved as:\n{out_path}")
     except Exception as e:
