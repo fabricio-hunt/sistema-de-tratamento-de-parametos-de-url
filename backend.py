@@ -1,27 +1,47 @@
 import pandas as pd
 from urllib.parse import urlparse
 
-def tratar_urls(df):
-    """
-    1. Detecta a coluna 'url' independentemente da capitalização.
-    2. Remove domínio e parâmetros, deixando apenas o caminho.
-    3. Converte para minúsculas.
-    4. Remove duplicatas e descarta linhas inválidas.
-    """
-    # Detecta coluna 'url'
-    coluna_url = next((c for c in df.columns if c.lower() == "url"), None)
-    if not coluna_url:
-        raise ValueError("Coluna 'url' não encontrada no DataFrame.")
 
-    urls_tratadas = []
-    for u in df[coluna_url].fillna("").astype(str):
+def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean and transform a DataFrame with a 'url' column into the format:
+    from;to;type;endDate
+
+    Steps:
+    1. Detect the 'url' column ignoring case.
+    2. Extract the URL path (lowercased), discarding domain and query params.
+    3. Remove duplicates and invalid rows.
+    4. Build a DataFrame with the required columns:
+       - from     -> cleaned path
+       - to       -> always empty (can be customized)
+       - type     -> fixed value 'superoferta'
+       - endDate  -> fixed value 'PERMANENT'
+    """
+    # Detect 'url' column case-insensitively
+    url_col = next((c for c in df.columns if c.lower() == "url"), None)
+    if not url_col:
+        raise ValueError("Column 'url' not found in the DataFrame.")
+
+    cleaned_paths = []
+    for u in df[url_col].fillna("").astype(str):
         try:
-            caminho = urlparse(u).path.lower()
-            if caminho:
-                urls_tratadas.append(caminho)
+            path = urlparse(u).path.lower()
+            if path:
+                cleaned_paths.append(path)
         except Exception:
-            # opcional: registrar o erro
+            # Skip malformed URLs silently
             pass
 
-    df_tratado = pd.DataFrame({"URL_TRATADA": urls_tratadas})
-    return df_tratado.drop_duplicates().reset_index(drop=True)
+    # Remove duplicates and reset index
+    unique_paths = pd.Series(cleaned_paths).drop_duplicates().reset_index(drop=True)
+
+    # Build final DataFrame in the exact required format
+    final_df = pd.DataFrame({
+        "from": unique_paths,
+        "to": "",
+        "type": "superoferta",
+        "endDate": "PERMANENT"
+    })
+
+    # Ensure semicolon as separator when saving
+    return final_df
