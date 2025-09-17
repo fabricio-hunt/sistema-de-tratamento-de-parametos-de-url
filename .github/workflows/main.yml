@@ -1,0 +1,46 @@
+name: CI simples (gera output)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar deps mínimas
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas chardet
+
+      - name: Gerar output.csv usando o backend
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          # IMPORTANTE: ajuste se seu arquivo não for "backend.py" na raiz.
+          from backend import tratar_urls
+
+          df = pd.DataFrame({"url": ["https://exemplo.com/Loja/Produto?a=1&b=2"]})
+          out = tratar_urls(df)
+          out.to_csv("output.csv", index=False, encoding="utf-8")
+          print("OK: output.csv gerado")
+          PY
+
+      - name: Conferir arquivo
+        run: |
+          test -f output.csv || (echo "ERRO: não gerou output.csv" && exit 1)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: output
+          path: output.csv
