@@ -38,10 +38,13 @@ def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
     # Build final DataFrame in the exact required format
     final_df = pd.DataFrame({
         "from": unique_paths,
-        "to": "",
-        "type": "superoferta",
-        "endDate": "PERMANENT"
+        "to": "/superoferta",
+        "type": "PERMANENT",
+        "endDate": ""
     })
+
+    # Save with semicolon as the field separator
+    final_df.to_csv("output.csv", index=False, sep=";", encoding="utf-8")
 
     # Ensure semicolon as separator when saving
     return final_df
