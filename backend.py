@@ -13,9 +13,10 @@ def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
     3. Remove duplicates and invalid rows.
     4. Build a DataFrame with the required columns:
        - from     -> cleaned path
-       - to       -> always empty (can be customized)
-       - type     -> fixed value 'superoferta'
-       - endDate  -> fixed value 'PERMANENT'
+       - to       -> always '/superoferta'
+       - type     -> fixed value 'PERMANENT'
+       - endDate  -> empty
+    5. Filter out rows where 'from' ends with '/p'.
     """
     # Detect 'url' column case-insensitively
     url_col = next((c for c in df.columns if c.lower() == "url"), None)
@@ -35,7 +36,7 @@ def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
     # Remove duplicates and reset index
     unique_paths = pd.Series(cleaned_paths).drop_duplicates().reset_index(drop=True)
 
-    # Build final DataFrame in the exact required format
+    # Build final DataFrame
     final_df = pd.DataFrame({
         "from": unique_paths,
         "to": "/superoferta",
@@ -43,8 +44,10 @@ def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
         "endDate": ""
     })
 
+    # Filter out rows where 'from' ends with '/p'
+    final_df = final_df[~final_df["from"].str.endswith("/p")].reset_index(drop=True)
+
     # Save with semicolon as the field separator
     final_df.to_csv("output.csv", index=False, sep=";", encoding="utf-8")
 
-    # Ensure semicolon as separator when saving
     return final_df
