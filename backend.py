@@ -45,9 +45,13 @@ def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     # Filter out rows where 'from' ends with '/p'
-    final_df = final_df[~final_df["from"].str.endswith("/p")].reset_index(drop=True)
+    #final_df = final_df[~final_df["from"].str.endswith("/p")].reset_index(drop=True)
+
+    final_df = final_df[~final_df["from"].str.endswith("/p", na=False)]
+    final_df = final_df[final_df["from"].str.match(r".*/p\d+$", na=False)].reset_index(drop=True)
 
     # Save with semicolon as the field separator
     final_df.to_csv("output.csv", index=False, sep=";", encoding="utf-8")
+    
 
     return final_df

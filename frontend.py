@@ -66,8 +66,6 @@ def process_file(path_str: str) -> None:
         messagebox.showinfo("Done", f"Processing completed!\nSaved as:\n{out_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to process the file:\n{e}")
-
-
 # ---------------- GUI ----------------
 app = TkinterDnD.Tk()
 app.title("URL Processing")
