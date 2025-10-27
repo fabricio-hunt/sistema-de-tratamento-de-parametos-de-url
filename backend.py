@@ -1,46 +1,35 @@
 import pandas as pd
 from urllib.parse import urlparse
 
-
 def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean and transform a DataFrame that contains a 'url' column.
-    The function keeps only rows whose path ends with '/p' followed by digits
-    (e.g., '/p123456', '/electronics/p98765') and removes all others.
+    Keep only URLs whose *path* ends with:
+      - '/p' + digits   (e.g., '/p123', '/category/p456')
+      - '-p' + digits   (e.g., '/some-slug-p1058146')
+    Query strings like '?v=...' are ignored by urlparse and do not affect matching.
 
-    Output CSV format:
-        from;to;type;endDate
-
-    Steps:
-    1. Detect the 'url' column (case-insensitive).
-    2. Extract only the URL path (lowercase, without domain or query params).
-    3. Remove duplicates.
-    4. Keep only paths that match '/p' + digits pattern.
-    5. Build the final DataFrame with required columns.
-    6. Export the result to 'output.csv'.
+    Output CSV columns: from;to;type;endDate
     """
 
-    # 1️⃣ Find the column that matches 'url' (ignore upper/lower case)
+    # 1) Find the 'url' column (case-insensitive)
     url_col = next((c for c in df.columns if c.lower() == "url"), None)
     if not url_col:
         raise ValueError("Column 'url' not found in the DataFrame.")
 
-    # 2️⃣ Extract the path from each URL (ignore domain, query, etc.)
+    # 2) Extract lowercase paths (domain/query removed)
     cleaned_paths = []
     for u in df[url_col].fillna("").astype(str):
         try:
-            # Parse URL and extract lowercase path
             path = urlparse(u).path.lower().strip()
             if path:
                 cleaned_paths.append(path)
         except Exception:
-            # Skip malformed URLs silently
-            continue
+            continue  # skip malformed URLs
 
-    # 3️⃣ Remove duplicates and reset the index
+    # 3) Deduplicate
     unique_paths = pd.Series(cleaned_paths).drop_duplicates().reset_index(drop=True)
 
-    # 4️⃣ Build the final DataFrame structure
+    # 4) Build output frame
     final_df = pd.DataFrame({
         "from": unique_paths,
         "to": "/superoferta",
@@ -48,11 +37,17 @@ def tratar_urls(df: pd.DataFrame) -> pd.DataFrame:
         "endDate": ""
     })
 
-    # 5️⃣ Keep ONLY URLs ending with '/p' + digits (e.g., /p123, /category/p456)
-    #     This automatically excludes '/p', '/video', '/banheiro', etc.
-    final_df = final_df[final_df["from"].str.match(r".*/p\d+$", na=False)].reset_index(drop=True)
+    # 5) Keep ONLY paths that end with '/p<digits>' OR '-p<digits>'
+    #    Regex explanation:
+    #    - '.*'  : any text before last segment
+    #    - '-?p' : optional hyphen then 'p'
+    #    - '\d+' : one or more digits
+    #    - '/?$' : optional trailing slash at the very end
+    final_df = final_df[
+        final_df["from"].str.match(r".*/.*-?p\d+/?$", na=False)
+    ].reset_index(drop=True)
 
-    # 6️⃣ Export the cleaned data to a CSV file using semicolon as separator
+    # 6) Save CSV with semicolon separator
     final_df.to_csv("output.csv", index=False, sep=";", encoding="utf-8")
-
     return final_df
+        
