@@ -25,9 +25,26 @@ $$
 u \in \{ s \in \Sigma^* \mid s \text{ termina em } (/p \cup -p) \cdot d^+, d \in [0-9] \}
 $$
 
-Implementação em Python (Backend):
-```python
-# Regex para captura de padrões de produto (/p123 ou -p123)
-final_df = final_df[
-    final_df["from"].str.match(r".*/.*-?p\d+/?$", na=False)
-].reset_index(drop=True)
+## Arquitetura
+O sistema segue uma arquitetura desacoplada (MVC) para garantir testabilidade:
+* **Backend (`backend.py`):** Contém a lógica de negócios pura, utilizando `pandas`.
+* **Frontend (`frontend.py`):** Interface gráfica (GUI) utilizando `tkinterdnd2` e `ttkbootstrap`.
+* **CI/CD:** Pipeline de validação via GitHub Actions.
+
+## Instalação e Execução
+
+### Pré-requisitos
+* Python 3.11+
+
+### Configuração
+```bash
+git clone [https://github.com/fabricio-hunt/sistema-de-tratamento-de-parametos-de-url.git](https://github.com/fabricio-hunt/sistema-de-tratamento-de-parametos-de-url.git)
+cd sistema-de-tratamento-de-parametos-de-url
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+# Linux/MacOS
+source venv/bin/activate
+
+pip install -r requirements.txt
