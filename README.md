@@ -1,188 +1,33 @@
-# 🧹 URL Cleaning & Processing System
+# SEO-URL-Automator: Ferramenta de Normalização e Tratamento de Redirecionamentos
 
-A modern **Python** application with a graphical interface for **drag & drop** file input.  
-It cleans and standardizes URLs from a `.csv` or `.txt` file and generates a final `output.csv` in the format:
+![Build Status](https://img.shields.io/github/actions/workflow/status/fabricio-hunt/sistema-de-tratamento-de-parametos-de-url/ci.yml)
+![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-```
-from;to;type;endDate
-```
+## Visão Geral
+O **SEO-URL-Automator** é uma solução de software desenvolvida para mitigar a incidência de erros 404 (Not Found) em plataformas de e-commerce de grande porte. A ferramenta automatiza a ingestão, limpeza e normalização de URLs legadas, gerando tabelas de redirecionamento (301) compatíveis com plataformas de gestão de conteúdo (CMS).
 
----
+Este projeto foi desenvolvido no contexto de otimização de *Crawl Budget* e Governança de Dados, visando reduzir o esforço manual em auditorias de SEO Técnico.
 
-## 🚀 Key Features
+## Definição do Problema
+Em migrações de plataforma ou alterações de arquitetura da informação, URLs antigas frequentemente geram erros de rastreamento. A identificação manual de padrões em datasets com milhares de entradas é ineficiente e propensa a erros humanos.
 
-- ✅ **Drag & drop** interface for quick file input  
-- ✅ Pure **Python** implementation  
-- ✅ Strips **domain names and query parameters**  
-- ✅ Converts URLs to **lowercase**  
-- ✅ Removes **duplicate** URLs  
-- ✅ Generates `output.csv` with exact **from;to;type;endDate** format  
-- ✅ Clear **English comments** throughout the code  
+Esta ferramenta resolve o problema através de:
+1.  **Ingestão Agnóstica:** Suporte a arquivos `.csv` e `.txt` com detecção automática de encoding (via `chardet`).
+2.  **Normalização Algorítmica:** Padronização de strings para *lowercase* e remoção de *query parameters*.
+3.  **Filtragem por Expressão Regular:** Identificação precisa de SKUs e categorias de produtos.
 
----
+## Lógica de Processamento
+A validação das URLs candidatas ao redirecionamento segue estritamente o padrão de identificação de produtos (SKUs) ou categorias baseadas em sufixos numéricos.
 
-## 📸 User Interface
+A função de filtragem $f(u)$ aceita uma URL se, e somente se:
+$$
+u \in \{ s \in \Sigma^* \mid s \text{ termina em } (/p \cup -p) \cdot d^+, d \in [0-9] \}
+$$
 
-Built with `tkinterdnd2` and `ttkbootstrap` for a modern, clean look:
-
-- Stylish themes (`flatly`, `morph`, `darkly`, etc.)
-- Drag-and-drop area
-- Optional **Select File** button
-
----
-
-## 🖥️ Tech Stack
-
-- [Python 3.11+](https://www.python.org/)  
-- [pandas](https://pandas.pydata.org/)  
-- [tkinter](https://docs.python.org/3/library/tkinter.html)  
-- [tkinterdnd2](https://pypi.org/project/tkinterdnd2/)  
-- [ttkbootstrap](https://ttkbootstrap.readthedocs.io/en/latest/)  
-- [chardet](https://pypi.org/project/chardet/) – encoding detection  
-
----
-
-## 📦 Installation
-
-Clone the repository and set up a virtual environment:
-
-```bash
-git clone https://github.com/your-username/your-repository.git
-cd your-repository
-
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS / Linux
-source venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-If you don’t have a requirements file yet, install directly:
-
-```bash
-pip install pandas tkinterdnd2 ttkbootstrap chardet
-```
-
----
-
-## ▶️ How to Run
-
-```bash
-python frontend.py
-```
-
-Then simply:
-
-- 🗂️ Drag and drop a `.csv` or `.txt` file, **or**
-- 🖱️ Click **Select File** to browse.
-
-The system processes the URLs and saves the result as `output.csv` in the same folder.
-
----
-
-## 📂 Project Structure
-
-```
-url_cleaning/
-│
-├── frontend.py        # GUI with drag & drop and ttkbootstrap styling
-├── backend.py         # URL processing logic (from;to;type;endDate)
-├── output.csv         # Generated cleaned file
-├── requirements.txt   # Python dependencies
-└── README.md          # Project documentation
-```
-
----
-
-## ⚙️ Continuous Integration (GitHub Actions)
-
-The project includes a **headless CI pipeline** that tests only the backend, ensuring no GUI pop-ups during checks.
-
-### What the CI does
-
-- Installs **Python 3.12**, `pandas`, and `chardet`
-- Imports and runs `tratar_urls` on sample data
-- Confirms that `output.csv` is generated
-- Publishes the file as a downloadable artifact
-
-### Enable It
-
-Create `.github/workflows/ci.yml` with:
-
-```yaml
-name: CI - Backend Check
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas chardet
-
-      - name: Test backend and create output.csv
-        run: |
-          python - <<'PY'
-          import pandas as pd
-          from backend import tratar_urls
-          df = pd.DataFrame({"url": ["https://example.com/store/item?id=123"]})
-          tratar_urls(df).to_csv("output.csv", index=False, sep=";", encoding="utf-8")
-          print("✔ output.csv created successfully")
-          PY
-
-      - name: Verify output.csv
-        run: test -f output.csv
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: output
-          path: output.csv
-```
-
----
-
-## 🧪 Local Backend Test
-
-Run the backend alone (no GUI):
-
-```bash
-python - <<'PY'
-import pandas as pd
-from backend import tratar_urls
-df = pd.DataFrame({"url": ["https://example.com/store/item?id=123"]})
-tratar_urls(df).to_csv("output.csv", index=False, sep=";", encoding="utf-8")
-print("✔ Local test passed")
-PY
-```
-
----
-
-## 📜 License
-
-Licensed under the [MIT License](LICENSE).  
-You’re free to use, copy, modify, and distribute with attribution.
-
----
-
-## 👨‍💻 Author
-
-**Fabricio Baraúna**  
-Bemol S/A – [fabriciomacedo@bemol.com.br](mailto:fabriciomacedo@bemol.com.br)  
-Educational & automation project.
+Implementação em Python (Backend):
+```python
+# Regex para captura de padrões de produto (/p123 ou -p123)
+final_df = final_df[
+    final_df["from"].str.match(r".*/.*-?p\d+/?$", na=False)
+].reset_index(drop=True)
