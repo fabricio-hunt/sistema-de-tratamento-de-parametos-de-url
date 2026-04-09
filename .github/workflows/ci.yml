@@ -1,0 +1,66 @@
+name: CI — URL Treatment
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: |
+          pip install ruff
+          ruff check . --select E,F,W --ignore E501
+
+      - name: Type check (mypy)
+        run: |
+          pip install mypy pandas-stubs
+          mypy backend.py dal.py vtex_client.py config.py --ignore-missing-imports
+
+      - name: Run tests
+        run: |
+          pip install pytest
+          pytest tests/ -v --tb=short
+        env:
+          # Tests usam mocks — não precisam de credenciais reais
+          DATABRICKS_HOST: "mock.azuredatabricks.net"
+          DATABRICKS_HTTP_PATH: "sql/mock/path"
+          DATABRICKS_TOKEN: "dapi-mock-token"
+          VTEX_ACCOUNT: "bemol-test"
+          VTEX_ENVIRONMENT: "vtexcommercestable"
+          VTEX_APP_KEY: "mock-key"
+          VTEX_APP_TOKEN: "mock-token"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Bandit (SAST)
+        run: |
+          pip install bandit
+          bandit -r . -x .venv,tests -ll
+      - name: Check for secrets in code
+        run: |
+          pip install detect-secrets
+          detect-secrets scan --baseline .secrets.baseline || true
